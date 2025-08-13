@@ -425,7 +425,13 @@ class AttritionDashboard:
     def setup_sidebar(self):
         """Configura sidebar com filtros"""
         st.sidebar.markdown("## 🎛️ Filtros e Configurações")
-        
+
+
+        # Botão para voltar à home
+        if st.sidebar.button("🏠 Voltar para Home"):
+            st.session_state["page"] = "home"
+            st.experimental_rerun()
+            
         # Verificar se dados estão carregados
         if self.df is None or len(self.df) == 0:
             st.sidebar.error("❌ Dados não carregados")
@@ -1172,3 +1178,4 @@ if __name__ == "__main__":
     except Exception as e:
         st.error(f"❌ Erro crítico na aplicação: {str(e)}")
         st.info("🔄 Recarregue a página ou verifique os dados de entrada.")
+
