@@ -430,7 +430,7 @@ class AttritionDashboard:
         # Botão para voltar à home
         if st.sidebar.button("🏠 Voltar para Home"):
             st.session_state["page"] = "home"
-            st.experimental_rerun()
+            st.rerun()
             
         # Verificar se dados estão carregados
         if self.df is None or len(self.df) == 0:
@@ -1178,4 +1178,5 @@ if __name__ == "__main__":
     except Exception as e:
         st.error(f"❌ Erro crítico na aplicação: {str(e)}")
         st.info("🔄 Recarregue a página ou verifique os dados de entrada.")
+
 
