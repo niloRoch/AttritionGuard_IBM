@@ -1,0 +1,33 @@
+data:
+  external_data_path: data/external/
+  processed_data_path: data/processed/
+  raw_data_path: data/raw/IBM_Fn-UseC_-HR-Employee-Attrition.csv
+features:
+  categorical_features:
+  - BusinessTravel
+  - Department
+  - EducationField
+  - Gender
+  - JobRole
+  - MaritalStatus
+  - OverTime
+  numerical_features:
+  - Age
+  - DailyRate
+  - DistanceFromHome
+  - MonthlyIncome
+  - NumCompaniesWorked
+  target_encoding:
+    'No': 0
+    'Yes': 1
+model:
+  cv_folds: 5
+  random_state: 42
+  target_column: Attrition
+  test_size: 0.2
+visualization:
+  color_palette: husl
+  figsize:
+  - 12
+  - 8
+  style: whitegrid
