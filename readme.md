@@ -312,13 +312,6 @@ Use as [GitHub Issues](https://github.com/seu-usuario/employee-attrition-analyti
 
 ---
 
-
-### **📊 Datasets Relacionados**
-- [Kaggle HR Analytics](https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset)
-- [UCI HR Dataset](https://archive.ics.uci.edu/ml/datasets/Human+Resources+Analytics)
-
----
-
 <div align="center">
 
 ## 📞 **Contato**
