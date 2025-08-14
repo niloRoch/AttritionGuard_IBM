@@ -1,5 +1,6 @@
-# Dashboard Interativo - Employee Attrition Analytics
+# 🔥 AttritionGuard - Employee Analytics Dashboard
 # Streamlit App para análise e predições de rotatividade de funcionários
+# Versão 2.0 - Completamente renovada
 
 import streamlit as st
 import pandas as pd
@@ -7,15 +8,14 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc, accuracy_score, precision_score, recall_score, f1_score
 import warnings
 import datetime
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_curve, auc
+from sklearn.preprocessing import LabelEncoder
+import io
+
 warnings.filterwarnings('ignore')
 
 # ========================================
@@ -23,383 +23,407 @@ warnings.filterwarnings('ignore')
 # ========================================
 
 st.set_page_config(
-    page_title="AttritionGuard - Employee Analytics",
+    page_title="🔥 AttritionGuard - Employee Analytics",
     page_icon="🔥",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ========================================
-# CSS CUSTOMIZADO
+# CSS MODERNO E RESPONSIVO
 # ========================================
 
-st.markdown("""
-<style>
+def load_css():
+    """Carrega CSS personalizado moderno"""
+    st.markdown("""
+    <style>
+    /* Importar fontes modernas */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    /* Reset e configurações globais */
+    .main {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Header principal */
     .main-header {
-        font-size: 3rem;
-        font-weight: bold;
+        font-size: 3.5rem;
+        font-weight: 700;
         text-align: center;
-        background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-bottom: 2rem;
-        padding: 1rem 0;
+        background-clip: text;
+        margin: 2rem 0;
+        padding: 1rem;
+        animation: glow 2s ease-in-out infinite alternate;
     }
     
+    @keyframes glow {
+        from { filter: drop-shadow(0 0 5px rgba(102, 126, 234, 0.4)); }
+        to { filter: drop-shadow(0 0 20px rgba(102, 126, 234, 0.6)); }
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #6c757d;
+        font-size: 1.3rem;
+        font-weight: 500;
+        margin-bottom: 3rem;
+    }
+    
+    /* Cards de métricas modernos */
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
         padding: 1.5rem;
-        border-radius: 15px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         margin: 1rem 0;
         text-align: center;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
     }
     
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    }
+    
+    /* Status de risco */
     .risk-high {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
+        padding: 1.2rem;
+        border-radius: 15px;
         margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+        text-align: center;
+        font-weight: 600;
     }
     
     .risk-medium {
         background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
+        padding: 1.2rem;
+        border-radius: 15px;
         margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(255, 167, 38, 0.3);
+        text-align: center;
+        font-weight: 600;
     }
     
     .risk-low {
         background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
+        padding: 1.2rem;
+        border-radius: 15px;
         margin: 0.5rem 0;
+        box-shadow: 0 6px 20px rgba(102, 187, 106, 0.3);
+        text-align: center;
+        font-weight: 600;
     }
     
+    /* Caixas de insight */
     .insight-box {
-        background-color: #e3f2fd;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 5px solid #2196f3;
         padding: 1.5rem;
         border-radius: 15px;
-        border-left: 5px solid #2196f3;
-        margin: 1rem 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.1);
+        font-weight: 500;
     }
     
-    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
-        font-size: 1.1rem;
-        font-weight: bold;
+    /* Tabs personalizadas */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2px;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 5px;
     }
     
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-weight: 600;
+    }
+    
+    /* Sidebar melhorada */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Botões modernos */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.7rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Footer */
     .footer {
         text-align: center;
-        padding: 2rem 0;
-        color: #666;
-        border-top: 1px solid #eee;
-        margin-top: 3rem;
+        padding: 3rem 0;
+        color: #6c757d;
+        border-top: 1px solid #dee2e6;
+        margin-top: 4rem;
+        font-weight: 500;
     }
     
-    .highlight-metric {
-        background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: bold;
-        font-size: 1.2em;
+    /* Animações sutis */
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        animation: countUp 1s ease-out;
     }
-</style>
-""", unsafe_allow_html=True)
+    
+    @keyframes countUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2.5rem;
+        }
+        
+        .metric-card {
+            margin: 0.5rem 0;
+            padding: 1rem;
+        }
+    }
+    
+    /* Loading spinner personalizado */
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # ========================================
-# CLASSE PRINCIPAL DO DASHBOARD
+# CLASSE PRINCIPAL RENOVADA
 # ========================================
 
 class AttritionDashboard:
-    """Dashboard interativo para análise de Employee Attrition"""
+    """Dashboard renovado para análise de Employee Attrition"""
     
     def __init__(self):
-        self.df = None
-        self.df_filtered = None
-        self.model = None
-        self.feature_importance = None
-        self.model_metrics = {}
+        """Inicializa o dashboard"""
+        if 'data_loaded' not in st.session_state:
+            st.session_state.data_loaded = False
+            st.session_state.df = None
+            st.session_state.model = None
+            st.session_state.model_metrics = {}
+            st.session_state.feature_importance = None
+            
         self.load_data()
     
-    @st.cache_data
-    def load_data(_self):
-        """Carrega e prepara os dados"""
-        try:
-            # Tentar carregar dados de diferentes locais possíveis
-            possible_paths = [
-                'IBM_Fn-UseC_-HR-Employee-Attrition.csv',
-                'data/raw/IBM_Fn-UseC_-HR-Employee-Attrition.csv',
-                'data/IBM_Fn-UseC_-HR-Employee-Attrition.csv',
-                'WA_Fn-UseC_-HR-Employee-Attrition.csv',
-                'data/raw/WA_Fn-UseC_-HR-Employee-Attrition.csv',
-                'HR_Analytics.csv'
-            ]
-            
-            df = None
-            for path in possible_paths:
-                try:
-                    df = pd.read_csv(path)
-                    st.success(f"✅ Dados carregados de: {path}")
-                    break
-                except FileNotFoundError:
-                    continue
-                except Exception as e:
-                    st.warning(f"Erro ao ler {path}: {str(e)}")
-                    continue
-            
-            if df is None:
-                # Gerar dados sintéticos para demonstração
-                df = _self.generate_synthetic_data()
-                st.info("ℹ️ Usando dados sintéticos para demonstração")
-            
-            # Preparar dados
-            df = _self.prepare_data(df)
-            _self.df = df
-            
-            # Treinar modelo
-            _self.train_models()
-            
-        except Exception as e:
-            st.error(f"❌ Erro crítico ao carregar dados: {str(e)}")
-            # Fallback para dados sintéticos em caso de erro
-            _self.df = _self.generate_synthetic_data()
-            _self.df = _self.prepare_data(_self.df)
-            _self.train_models()
-    
-    def generate_synthetic_data(self):
+    def generate_synthetic_data(self, n_samples=1470):
         """Gera dados sintéticos realísticos para demonstração"""
         np.random.seed(42)
-        n_samples = 1470  # Mesmo tamanho do dataset original da IBM
         
-        data = {}
+        # Dados demográficos
+        age = np.random.randint(18, 65, n_samples)
+        gender = np.random.choice(['Male', 'Female'], n_samples, p=[0.6, 0.4])
+        marital_status = np.random.choice(['Single', 'Married', 'Divorced'], n_samples, p=[0.32, 0.46, 0.22])
+        education = np.random.randint(1, 6, n_samples)
         
-        # Variáveis demográficas
-        data['Age'] = np.random.randint(18, 65, n_samples)
-        data['Gender'] = np.random.choice(['Male', 'Female'], n_samples, p=[0.6, 0.4])
-        data['MaritalStatus'] = np.random.choice(['Single', 'Married', 'Divorced'], n_samples, p=[0.32, 0.46, 0.22])
-        data['Education'] = np.random.randint(1, 6, n_samples)
-        data['EducationField'] = np.random.choice([
-            'Life Sciences', 'Other', 'Medical', 'Marketing', 
-            'Technical Degree', 'Human Resources'
-        ], n_samples, p=[0.41, 0.16, 0.15, 0.16, 0.08, 0.04])
+        # Dados organizacionais
+        departments = ['Research & Development', 'Sales', 'Human Resources']
+        department = np.random.choice(departments, n_samples, p=[0.65, 0.31, 0.04])
         
-        # Variáveis organizacionais
-        data['Department'] = np.random.choice([
-            'Research & Development', 'Sales', 'Human Resources'
-        ], n_samples, p=[0.65, 0.31, 0.04])
+        job_roles = ['Sales Executive', 'Research Scientist', 'Laboratory Technician',
+                    'Manufacturing Director', 'Healthcare Representative', 'Manager',
+                    'Sales Representative', 'Research Director', 'Human Resources']
+        job_role = np.random.choice(job_roles, n_samples)
         
-        data['JobRole'] = np.random.choice([
-            'Sales Executive', 'Research Scientist', 'Laboratory Technician',
-            'Manufacturing Director', 'Healthcare Representative', 'Manager',
-            'Sales Representative', 'Research Director', 'Human Resources'
-        ], n_samples)
+        job_level = np.random.randint(1, 6, n_samples)
+        years_at_company = np.random.randint(0, 40, n_samples)
+        years_in_current_role = np.minimum(years_at_company, np.random.randint(0, 18, n_samples))
+        total_working_years = np.maximum(years_at_company, np.random.randint(0, 40, n_samples))
         
-        data['JobLevel'] = np.random.randint(1, 6, n_samples)
-        data['YearsAtCompany'] = np.random.randint(0, 40, n_samples)
-        data['YearsInCurrentRole'] = np.minimum(
-            data['YearsAtCompany'], 
-            np.random.randint(0, 18, n_samples)
-        )
-        data['YearsSinceLastPromotion'] = np.minimum(
-            data['YearsAtCompany'],
-            np.random.randint(0, 15, n_samples)
-        )
-        data['YearsWithCurrManager'] = np.minimum(
-            data['YearsAtCompany'],
-            np.random.randint(0, 17, n_samples)
-        )
-        data['TotalWorkingYears'] = np.maximum(
-            data['YearsAtCompany'],
-            np.random.randint(0, 40, n_samples)
-        )
-        data['NumCompaniesWorked'] = np.random.randint(0, 10, n_samples)
+        # Dados financeiros
+        base_salary = 2000 + job_level * 2500 + total_working_years * 120
+        monthly_income = np.maximum(base_salary + np.random.normal(0, 1500, n_samples), 1009)
         
-        # Variáveis financeiras
-        base_salary = 2000 + data['JobLevel'] * 2000 + data['TotalWorkingYears'] * 100
-        data['MonthlyIncome'] = base_salary + np.random.normal(0, 1000, n_samples)
-        data['MonthlyIncome'] = np.maximum(data['MonthlyIncome'], 1009)
+        # Dados de satisfação
+        job_satisfaction = np.random.randint(1, 5, n_samples)
+        environment_satisfaction = np.random.randint(1, 5, n_samples)
+        work_life_balance = np.random.randint(1, 5, n_samples)
         
-        data['HourlyRate'] = np.random.randint(30, 101, n_samples)
-        data['DailyRate'] = np.random.randint(102, 1499, n_samples)
-        data['MonthlyRate'] = np.random.randint(2094, 26999, n_samples)
-        data['PercentSalaryHike'] = np.random.randint(11, 25, n_samples)
-        data['StockOptionLevel'] = np.random.randint(0, 4, n_samples)
-        
-        # Variáveis de satisfação
-        data['JobSatisfaction'] = np.random.randint(1, 5, n_samples)
-        data['EnvironmentSatisfaction'] = np.random.randint(1, 5, n_samples)
-        data['RelationshipSatisfaction'] = np.random.randint(1, 5, n_samples)
-        data['WorkLifeBalance'] = np.random.randint(1, 5, n_samples)
-        data['JobInvolvement'] = np.random.randint(1, 5, n_samples)
-        data['PerformanceRating'] = np.random.choice([3, 4], n_samples, p=[0.85, 0.15])
-        
-        # Variáveis operacionais
-        data['DistanceFromHome'] = np.random.randint(1, 30, n_samples)
-        data['BusinessTravel'] = np.random.choice([
-            'Travel_Rarely', 'Travel_Frequently', 'Non-Travel'
-        ], n_samples, p=[0.71, 0.19, 0.10])
-        data['OverTime'] = np.random.choice(['No', 'Yes'], n_samples, p=[0.72, 0.28])
-        data['TrainingTimesLastYear'] = np.random.randint(0, 7, n_samples)
-        
-        # Variáveis constantes
-        data['Over18'] = 'Y'
-        data['EmployeeCount'] = 1
-        data['StandardHours'] = 80
-        data['EmployeeNumber'] = range(1, n_samples + 1)
+        # Dados operacionais
+        distance_from_home = np.random.randint(1, 30, n_samples)
+        overtime = np.random.choice(['No', 'Yes'], n_samples, p=[0.72, 0.28])
+        business_travel = np.random.choice(['Travel_Rarely', 'Travel_Frequently', 'Non-Travel'], 
+                                         n_samples, p=[0.71, 0.19, 0.10])
         
         # Criar Attrition baseado em fatores realísticos
         attrition_prob = np.zeros(n_samples)
         
         # Fatores de risco
-        attrition_prob += (data['Age'] < 30) * 0.15
-        attrition_prob += (data['JobSatisfaction'] <= 2) * 0.20
-        attrition_prob += (data['EnvironmentSatisfaction'] <= 2) * 0.15
-        attrition_prob += (data['WorkLifeBalance'] <= 2) * 0.15
-        attrition_prob += (data['YearsAtCompany'] <= 2) * 0.25
-        attrition_prob += (np.array(data['OverTime']) == 'Yes') * 0.20
-        attrition_prob += (np.array(data['BusinessTravel']) == 'Travel_Frequently') * 0.10
-        attrition_prob += (data['DistanceFromHome'] > 20) * 0.10
-        attrition_prob += (np.array(data['MaritalStatus']) == 'Single') * 0.05
-        attrition_prob += (data['NumCompaniesWorked'] >= 4) * 0.10
+        attrition_prob += (age < 30) * 0.20
+        attrition_prob += (job_satisfaction <= 2) * 0.25
+        attrition_prob += (environment_satisfaction <= 2) * 0.15
+        attrition_prob += (work_life_balance <= 2) * 0.15
+        attrition_prob += (years_at_company <= 2) * 0.30
+        attrition_prob += (overtime == 'Yes') * 0.25
+        attrition_prob += (business_travel == 'Travel_Frequently') * 0.15
+        attrition_prob += (distance_from_home > 20) * 0.12
         
         # Fatores protetivos
-        attrition_prob -= (data['JobLevel'] >= 4) * 0.10
-        attrition_prob -= (data['MonthlyIncome'] > np.percentile(data['MonthlyIncome'], 75)) * 0.15
-        attrition_prob -= (data['YearsAtCompany'] > 10) * 0.20
-        attrition_prob -= (data['StockOptionLevel'] >= 1) * 0.05
+        attrition_prob -= (job_level >= 4) * 0.15
+        attrition_prob -= (monthly_income > np.percentile(monthly_income, 75)) * 0.20
+        attrition_prob -= (years_at_company > 10) * 0.25
         
         # Normalizar probabilidades
-        attrition_prob = np.clip(attrition_prob, 0.05, 0.50)
+        attrition_prob = np.clip(attrition_prob, 0.02, 0.55)
         
         # Gerar attrition
-        data['Attrition'] = np.array(['Yes' if np.random.random() < prob else 'No' 
-                                    for prob in attrition_prob])
+        attrition = np.array(['Yes' if np.random.random() < prob else 'No' for prob in attrition_prob])
         
-        return pd.DataFrame(data)
+        # Criar DataFrame
+        df = pd.DataFrame({
+            'EmployeeNumber': range(1, n_samples + 1),
+            'Age': age,
+            'Gender': gender,
+            'MaritalStatus': marital_status,
+            'Education': education,
+            'Department': department,
+            'JobRole': job_role,
+            'JobLevel': job_level,
+            'YearsAtCompany': years_at_company,
+            'YearsInCurrentRole': years_in_current_role,
+            'TotalWorkingYears': total_working_years,
+            'MonthlyIncome': monthly_income.astype(int),
+            'JobSatisfaction': job_satisfaction,
+            'EnvironmentSatisfaction': environment_satisfaction,
+            'WorkLifeBalance': work_life_balance,
+            'DistanceFromHome': distance_from_home,
+            'OverTime': overtime,
+            'BusinessTravel': business_travel,
+            'Attrition': attrition
+        })
+        
+        return df
     
     def prepare_data(self, df):
-        """Prepara os dados para análise"""
+        """Prepara e enriquece os dados"""
+        # Criar variável binária
+        df['Attrition_Binary'] = (df['Attrition'] == 'Yes').astype(int)
+        
+        # Calcular score de risco
+        risk_score = np.zeros(len(df))
+        
+        # Aplicar fatores de risco
+        risk_score += (df['OverTime'] == 'Yes') * 0.25
+        risk_score += (df['JobSatisfaction'] <= 2) * 0.20
+        risk_score += (df['Age'] < 30) * 0.15
+        risk_score += (df['YearsAtCompany'] < 2) * 0.20
+        risk_score += (df['DistanceFromHome'] > 20) * 0.10
+        risk_score += (df['WorkLifeBalance'] <= 2) * 0.10
+        
+        # Normalizar
+        df['Risk_Score'] = np.clip(risk_score, 0, 1)
+        
+        # Categorias de risco
+        df['Risk_Category'] = pd.cut(df['Risk_Score'], 
+                                   bins=[0, 0.3, 0.7, 1.0], 
+                                   labels=['Baixo Risco', 'Médio Risco', 'Alto Risco'])
+        
+        # Features adicionais
+        df['Income_Age_Ratio'] = df['MonthlyIncome'] / np.maximum(df['Age'], 1)
+        df['Company_Experience_Ratio'] = df['YearsAtCompany'] / np.maximum(df['TotalWorkingYears'], 1)
+        
+        # Faixas etárias
+        df['Age_Group'] = pd.cut(df['Age'], bins=[0, 30, 45, 100], labels=['Jovem (<30)', 'Médio (30-45)', 'Sênior (>45)'])
+        
+        # Faixas salariais
+        df['Salary_Group'] = pd.qcut(df['MonthlyIncome'], q=4, labels=['Q1 (Baixo)', 'Q2 (Médio-Baixo)', 'Q3 (Médio-Alto)', 'Q4 (Alto)'])
+        
+        return df
+    
+    @st.cache_data
+    def load_data(_self):
+        """Carrega ou gera dados"""
         try:
-            # Criar variável binária para Attrition
-            df['Attrition_Binary'] = (df['Attrition'] == 'Yes').astype(int)
+            # Tentar carregar arquivo CSV
+            uploaded_file = st.file_uploader("📁 Carregar arquivo CSV (Opcional)", type=['csv'])
             
-            # Criar score de risco
-            risk_score = np.zeros(len(df))
+            if uploaded_file is not None:
+                df = pd.read_csv(uploaded_file)
+                st.success("✅ Dados carregados com sucesso!")
+            else:
+                # Gerar dados sintéticos
+                df = _self.generate_synthetic_data()
+                st.info("ℹ️ Usando dados sintéticos para demonstração")
             
-            # Fatores de risco com verificação de existência das colunas
-            if 'OverTime' in df.columns:
-                risk_score += (df['OverTime'] == 'Yes') * 0.25
-            if 'JobSatisfaction' in df.columns:
-                risk_score += (df['JobSatisfaction'] <= 2) * 0.20
-            if 'Age' in df.columns:
-                risk_score += (df['Age'] < 30) * 0.15
-            if 'YearsAtCompany' in df.columns:
-                risk_score += (df['YearsAtCompany'] < 2) * 0.20
-            if 'DistanceFromHome' in df.columns:
-                risk_score += (df['DistanceFromHome'] > 20) * 0.10
-            if 'WorkLifeBalance' in df.columns:
-                risk_score += (df['WorkLifeBalance'] <= 2) * 0.10
+            # Preparar dados
+            df = _self.prepare_data(df)
             
-            # Normalizar entre 0 e 1
-            df['Risk_Score'] = np.clip(risk_score, 0, 1)
-            
-            # Criar categorias de risco
-            df['Risk_Category'] = pd.cut(
-                df['Risk_Score'], 
-                bins=[0, 0.3, 0.7, 1.0], 
-                labels=['Baixo Risco', 'Médio Risco', 'Alto Risco']
-            )
-            
-            # Features adicionais
-            if 'MonthlyIncome' in df.columns and 'Age' in df.columns:
-                df['Income_Age_Ratio'] = df['MonthlyIncome'] / np.maximum(df['Age'], 1)
-            
-            if 'YearsAtCompany' in df.columns and 'TotalWorkingYears' in df.columns:
-                df['Company_Experience_Ratio'] = df['YearsAtCompany'] / np.maximum(df['TotalWorkingYears'], 1)
+            # Salvar no session state
+            st.session_state.df = df
+            st.session_state.data_loaded = True
             
             return df
             
         except Exception as e:
-            st.error(f"Erro ao preparar dados: {str(e)}")
-            return df
+            st.error(f"❌ Erro ao carregar dados: {str(e)}")
+            return None
     
-    def train_models(self):
-        """Treina modelo para predição de attrition"""
-        if self.df is None:
+    def train_model(self):
+        """Treina modelo de ML"""
+        if st.session_state.df is None:
             return
         
         try:
-            # Selecionar features disponíveis
-            numeric_features = []
-            for col in ['Age', 'MonthlyIncome', 'YearsAtCompany', 'JobSatisfaction',
-                       'DistanceFromHome', 'EnvironmentSatisfaction', 'WorkLifeBalance',
-                       'YearsInCurrentRole', 'YearsSinceLastPromotion', 'TotalWorkingYears',
-                       'TrainingTimesLastYear', 'JobInvolvement', 'JobLevel']:
-                if col in self.df.columns:
-                    numeric_features.append(col)
-            
-            categorical_features = []
-            for col in ['OverTime', 'BusinessTravel', 'Department', 'JobRole', 
-                       'MaritalStatus', 'Gender']:
-                if col in self.df.columns:
-                    categorical_features.append(col)
+            df = st.session_state.df
             
             # Preparar features
-            X_numeric = self.df[numeric_features].fillna(0)
+            features = ['Age', 'JobLevel', 'YearsAtCompany', 'MonthlyIncome', 
+                       'JobSatisfaction', 'WorkLifeBalance', 'DistanceFromHome']
             
             # One-hot encoding para categóricas
-            X_categorical = pd.DataFrame()
-            for col in categorical_features:
-                dummies = pd.get_dummies(self.df[col], prefix=col)
-                X_categorical = pd.concat([X_categorical, dummies], axis=1)
+            df_encoded = pd.get_dummies(df[['OverTime', 'BusinessTravel', 'Department', 'Gender']], prefix_sep='_')
             
             # Combinar features
-            if len(X_categorical.columns) > 0:
-                X = pd.concat([X_numeric, X_categorical], axis=1)
-            else:
-                X = X_numeric
-            
-            y = self.df['Attrition_Binary']
-            
-            # Verificar se temos dados suficientes
-            if len(X) < 10 or X.shape[1] == 0:
-                st.warning("Dados insuficientes para treinar modelo")
-                return
+            X = pd.concat([df[features], df_encoded], axis=1)
+            y = df['Attrition_Binary']
             
             # Dividir dados
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42, stratify=y
-            )
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
             
-            # Treinar Random Forest
-            self.model = RandomForestClassifier(
-                n_estimators=100, 
-                random_state=42,
-                max_depth=10,
-                min_samples_split=5,
-                min_samples_leaf=2
-            )
-            self.model.fit(X_train, y_train)
+            # Treinar modelo
+            model = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10)
+            model.fit(X_train, y_train)
             
-            # Feature importance
-            if len(X.columns) > 0:
-                importances = self.model.feature_importances_
-                self.feature_importance = pd.DataFrame({
-                    'feature': X.columns,
-                    'importance': importances
-                }).sort_values('importance', ascending=False).head(15)
+            # Predições
+            y_pred = model.predict(X_test)
+            y_pred_proba = model.predict_proba(X_test)[:, 1]
             
             # Métricas
-            y_pred = self.model.predict(X_test)
-            y_pred_proba = self.model.predict_proba(X_test)[:, 1]
-            
-            self.model_metrics = {
+            metrics = {
                 'accuracy': accuracy_score(y_test, y_pred),
                 'precision': precision_score(y_test, y_pred, zero_division=0),
                 'recall': recall_score(y_test, y_pred, zero_division=0),
@@ -409,140 +433,141 @@ class AttritionDashboard:
             # AUC-ROC
             if len(np.unique(y_test)) > 1:
                 fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-                self.model_metrics['auc_roc'] = auc(fpr, tpr)
+                metrics['auc_roc'] = auc(fpr, tpr)
             else:
-                self.model_metrics['auc_roc'] = 0.5
+                metrics['auc_roc'] = 0.5
             
-            # Salvar dados de teste
-            self.X_test = X_test
-            self.y_test = y_test
-            self.y_pred_proba = y_pred_proba
+            # Feature importance
+            feature_importance = pd.DataFrame({
+                'feature': X.columns,
+                'importance': model.feature_importances_
+            }).sort_values('importance', ascending=False)
+            
+            # Salvar no session state
+            st.session_state.model = model
+            st.session_state.model_metrics = metrics
+            st.session_state.feature_importance = feature_importance
+            st.session_state.X_test = X_test
+            st.session_state.y_test = y_test
+            st.session_state.y_pred_proba = y_pred_proba
             
         except Exception as e:
-            st.warning(f"Erro ao treinar modelo: {str(e)}")
-            self.model = None
+            st.error(f"❌ Erro ao treinar modelo: {str(e)}")
     
     def setup_sidebar(self):
         """Configura sidebar com filtros"""
-        st.sidebar.markdown("## 🎛️ Filtros e Configurações")
-
-
-        # Botão para voltar à home
-        if st.sidebar.button("🏠 Voltar para Home"):
-            st.session_state["page"] = "home"
-            st.rerun()
-            
-        # Verificar se dados estão carregados
-        if self.df is None or len(self.df) == 0:
+        st.sidebar.markdown("## 🎛️ Filtros Interativos")
+        st.sidebar.markdown("---")
+        
+        if not st.session_state.data_loaded or st.session_state.df is None:
             st.sidebar.error("❌ Dados não carregados")
             return None
         
-        # Filtros com verificação de colunas
-        filtered_df = self.df.copy()
+        df = st.session_state.df
+        filtered_df = df.copy()
         
         # Filtro por departamento
-        if 'Department' in self.df.columns:
-            departments = ['Todos'] + sorted(self.df['Department'].unique().tolist())
-            selected_dept = st.sidebar.selectbox("🏢 Departamento", departments)
-            if selected_dept != 'Todos':
-                filtered_df = filtered_df[filtered_df['Department'] == selected_dept]
+        departments = ['Todos'] + sorted(df['Department'].unique().tolist())
+        selected_dept = st.sidebar.selectbox("🏢 Departamento", departments, key="dept_filter")
+        if selected_dept != 'Todos':
+            filtered_df = filtered_df[filtered_df['Department'] == selected_dept]
         
         # Filtro por idade
-        if 'Age' in self.df.columns:
-            age_range = st.sidebar.slider(
-                "👥 Faixa Etária", 
-                int(self.df['Age'].min()), 
-                int(self.df['Age'].max()), 
-                (int(self.df['Age'].min()), int(self.df['Age'].max()))
-            )
-            filtered_df = filtered_df[
-                (filtered_df['Age'] >= age_range[0]) & 
-                (filtered_df['Age'] <= age_range[1])
-            ]
+        age_range = st.sidebar.slider(
+            "👥 Faixa Etária", 
+            int(df['Age'].min()), 
+            int(df['Age'].max()), 
+            (int(df['Age'].min()), int(df['Age'].max())),
+            key="age_filter"
+        )
+        filtered_df = filtered_df[(filtered_df['Age'] >= age_range[0]) & (filtered_df['Age'] <= age_range[1])]
         
         # Filtro por salário
-        if 'MonthlyIncome' in self.df.columns:
-            salary_range = st.sidebar.slider(
-                "💰 Faixa Salarial ($)", 
-                int(self.df['MonthlyIncome'].min()), 
-                int(self.df['MonthlyIncome'].max()), 
-                (int(self.df['MonthlyIncome'].min()), int(self.df['MonthlyIncome'].max())),
-                step=500
-            )
-            filtered_df = filtered_df[
-                (filtered_df['MonthlyIncome'] >= salary_range[0]) & 
-                (filtered_df['MonthlyIncome'] <= salary_range[1])
-            ]
-        
-        # Filtro por função
-        if 'JobRole' in self.df.columns:
-            job_roles = ['Todos'] + sorted(self.df['JobRole'].unique().tolist())
-            selected_role = st.sidebar.selectbox("👔 Função", job_roles)
-            if selected_role != 'Todos':
-                filtered_df = filtered_df[filtered_df['JobRole'] == selected_role]
+        salary_range = st.sidebar.slider(
+            "💰 Faixa Salarial ($)", 
+            int(df['MonthlyIncome'].min()), 
+            int(df['MonthlyIncome'].max()), 
+            (int(df['MonthlyIncome'].min()), int(df['MonthlyIncome'].max())),
+            step=500,
+            key="salary_filter"
+        )
+        filtered_df = filtered_df[(filtered_df['MonthlyIncome'] >= salary_range[0]) & (filtered_df['MonthlyIncome'] <= salary_range[1])]
         
         # Filtro por categoria de risco
-        if 'Risk_Category' in filtered_df.columns:
-            risk_categories = ['Todos'] + list(filtered_df['Risk_Category'].unique())
-            selected_risk = st.sidebar.selectbox("⚠️ Categoria de Risco", risk_categories)
-            if selected_risk != 'Todos':
-                filtered_df = filtered_df[filtered_df['Risk_Category'] == selected_risk]
+        risk_categories = ['Todos'] + list(df['Risk_Category'].cat.categories)
+        selected_risk = st.sidebar.selectbox("⚠️ Categoria de Risco", risk_categories, key="risk_filter")
+        if selected_risk != 'Todos':
+            filtered_df = filtered_df[filtered_df['Risk_Category'] == selected_risk]
         
-        # Métricas do filtro
+        # Estatísticas dos filtros
         st.sidebar.markdown("---")
-        st.sidebar.markdown("### 📊 Dados Filtrados")
+        st.sidebar.markdown("### 📊 Estatísticas Filtradas")
         
-        col1, col2 = st.sidebar.columns(2)
-        with col1:
-            st.metric("Total", f"{len(filtered_df):,}")
-        with col2:
-            if len(filtered_df) > 0:
+        if len(filtered_df) > 0:
+            col1, col2 = st.sidebar.columns(2)
+            with col1:
+                st.metric("👥 Total", f"{len(filtered_df):,}")
+            with col2:
                 attrition_rate = filtered_df['Attrition_Binary'].mean()
-                st.metric("Attrition", f"{attrition_rate:.1%}")
-        
-        if 'Risk_Score' in filtered_df.columns and len(filtered_df) > 0:
+                st.metric("📊 Attrition", f"{attrition_rate:.1%}")
+            
             high_risk = (filtered_df['Risk_Score'] > 0.7).sum()
             st.sidebar.metric("🚨 Alto Risco", f"{high_risk:,}")
         
         # Data de atualização
         st.sidebar.markdown("---")
-        st.sidebar.markdown(f"📅 **Última atualização:** {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        st.sidebar.markdown(f"🕒 **Atualizado em:** {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}")
         
-        self.df_filtered = filtered_df
         return filtered_df
     
-    def create_overview_tab(self, filtered_df):
-        """Cria tab de visão geral"""
+    def create_overview_tab(self, df):
+        """Cria aba de visão geral"""
         st.header("📊 Visão Geral - Employee Attrition")
         
-        # Métricas principais
+        if df is None or len(df) == 0:
+            st.warning("⚠️ Nenhum dado disponível para exibir")
+            return
+        
+        # KPIs principais
         col1, col2, col3, col4 = st.columns(4)
         
-        total_employees = len(filtered_df)
-        attrition_rate = filtered_df['Attrition_Binary'].mean() if len(filtered_df) > 0 else 0
-        high_risk_employees = (filtered_df['Risk_Score'] > 0.7).sum() if 'Risk_Score' in filtered_df.columns else 0
-        avg_tenure = filtered_df['YearsAtCompany'].mean() if 'YearsAtCompany' in filtered_df.columns else 0
+        total_employees = len(df)
+        attrition_rate = df['Attrition_Binary'].mean()
+        high_risk_employees = (df['Risk_Score'] > 0.7).sum()
+        avg_tenure = df['YearsAtCompany'].mean()
         
         with col1:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-            st.metric("👥 Total Funcionários", f"{total_employees:,}")
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="metric-card">
+                <h3>👥 Total Funcionários</h3>
+                <div class="metric-value">{:,}</div>
+            </div>
+            """.format(total_employees), unsafe_allow_html=True)
         
         with col2:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-            st.metric("📊 Taxa de Attrition", f"{attrition_rate:.1%}")
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="metric-card">
+                <h3>📊 Taxa de Attrition</h3>
+                <div class="metric-value">{:.1%}</div>
+            </div>
+            """.format(attrition_rate), unsafe_allow_html=True)
         
         with col3:
-            risk_class = "risk-high" if high_risk_employees / max(total_employees, 1) > 0.2 else "risk-medium" if high_risk_employees / max(total_employees, 1) > 0.1 else "risk-low"
-            st.markdown(f'<div class="{risk_class}">', unsafe_allow_html=True)
-            st.metric("🚨 Alto Risco", f"{high_risk_employees:,}")
-            st.markdown('</div>', unsafe_allow_html=True)
+            risk_class = "risk-high" if high_risk_employees/total_employees > 0.2 else "risk-medium" if high_risk_employees/total_employees > 0.1 else "risk-low"
+            st.markdown(f"""
+            <div class="{risk_class}">
+                <h3>🚨 Alto Risco</h3>
+                <div class="metric-value">{high_risk_employees:,}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
         with col4:
-            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-            st.metric("⏱️ Permanência Média", f"{avg_tenure:.1f} anos")
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="metric-card">
+                <h3>⏱️ Permanência Média</h3>
+                <div class="metric-value">{:.1f} anos</div>
+            </div>
+            """.format(avg_tenure), unsafe_allow_html=True)
         
         st.markdown("---")
         
@@ -550,633 +575,94 @@ class AttritionDashboard:
         col1, col2 = st.columns(2)
         
         with col1:
-            if 'Department' in filtered_df.columns and len(filtered_df) > 0:
-                dept_stats = (filtered_df.groupby('Department')['Attrition_Binary']
-                            .agg(['count', 'mean']).reset_index())
-                dept_stats.columns = ['Department', 'Total', 'Attrition_Rate']
-                
-                fig_dept = px.bar(
-                    dept_stats, 
-                    x='Department', 
-                    y='Attrition_Rate',
-                    title="📊 Taxa de Attrition por Departamento",
-                    color='Attrition_Rate',
-                    color_continuous_scale='RdYlBu_r',
-                    text='Attrition_Rate'
-                )
-                fig_dept.update_traces(texttemplate='%{text:.1%}', textposition='outside')
-                fig_dept.update_layout(height=400, showlegend=False)
-                st.plotly_chart(fig_dept, use_container_width=True)
-            else:
-                st.info("📊 Dados de departamento não disponíveis")
+            # Attrition por departamento
+            dept_stats = df.groupby('Department')['Attrition_Binary'].agg(['count', 'mean']).reset_index()
+            dept_stats.columns = ['Department', 'Total', 'Attrition_Rate']
+            
+            fig_dept = px.bar(
+                dept_stats, 
+                x='Department', 
+                y='Attrition_Rate',
+                title="📊 Taxa de Attrition por Departamento",
+                color='Attrition_Rate',
+                color_continuous_scale='RdYlBu_r',
+                text='Attrition_Rate'
+            )
+            fig_dept.update_traces(texttemplate='%{text:.1%}', textposition='outside')
+            fig_dept.update_layout(height=400, showlegend=False)
+            st.plotly_chart(fig_dept, use_container_width=True)
         
         with col2:
-            if 'Risk_Score' in filtered_df.columns and len(filtered_df) > 0:
-                fig_risk = px.histogram(
-                    filtered_df, 
-                    x='Risk_Score',
-                    title="📈 Distribuição do Score de Risco",
-                    nbins=30,
-                    color_discrete_sequence=['#4ECDC4']
-                )
-                fig_risk.add_vline(x=0.7, line_dash="dash", line_color="red", 
-                                 annotation_text="Alto Risco")
-                fig_risk.add_vline(x=0.3, line_dash="dash", line_color="orange", 
-                                 annotation_text="Médio Risco")
-                fig_risk.update_layout(height=400)
-                st.plotly_chart(fig_risk, use_container_width=True)
-            else:
-                st.info("📈 Score de risco não calculado")
+            # Distribuição do score de risco
+            fig_risk = px.histogram(
+                df, 
+                x='Risk_Score',
+                title="📈 Distribuição do Score de Risco",
+                nbins=30,
+                color_discrete_sequence=['#667eea']
+            )
+            fig_risk.add_vline(x=0.7, line_dash="dash", line_color="red", annotation_text="Alto Risco")
+            fig_risk.add_vline(x=0.3, line_dash="dash", line_color="orange", annotation_text="Médio Risco")
+            fig_risk.update_layout(height=400)
+            st.plotly_chart(fig_risk, use_container_width=True)
         
         # Análise de fatores de risco
-        st.subheader("🎯 Principais Fatores de Risco")
+        st.subheader("🎯 Análise de Fatores de Risco")
         
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if 'OverTime' in filtered_df.columns and len(filtered_df) > 0:
-                overtime_stats = filtered_df.groupby('OverTime')['Attrition_Binary'].mean()
-                fig_overtime = px.bar(
-                    x=overtime_stats.index,
-                    y=overtime_stats.values,
-                    title="⏰ Impacto do Overtime",
-                    color=overtime_stats.values,
-                    color_continuous_scale='RdYlBu_r'
-                )
-                fig_overtime.update_traces(texttemplate='%{y:.1%}', textposition='outside')
-                fig_overtime.update_layout(showlegend=False, height=300)
-                st.plotly_chart(fig_overtime, use_container_width=True)
+            # Impacto do overtime
+            overtime_stats = df.groupby('OverTime')['Attrition_Binary'].mean()
+            fig_overtime = px.bar(
+                x=overtime_stats.index,
+                y=overtime_stats.values,
+                title="⏰ Impacto do Overtime",
+                color=overtime_stats.values,
+                color_continuous_scale='RdYlBu_r'
+            )
+            fig_overtime.update_traces(texttemplate='%{y:.1%}', textposition='outside')
+            fig_overtime.update_layout(showlegend=False, height=300)
+            st.plotly_chart(fig_overtime, use_container_width=True)
         
         with col2:
-            if 'JobSatisfaction' in filtered_df.columns and len(filtered_df) > 0:
-                satisfaction_labels = ['Baixa (1-2)', 'Média (3)', 'Alta (4-5)']
-                sat_bins = pd.cut(filtered_df['JobSatisfaction'], 
-                                bins=[0, 2.5, 3.5, 5], labels=satisfaction_labels)
-                sat_stats = filtered_df.groupby(sat_bins)['Attrition_Binary'].mean()
-                
-                fig_sat = px.bar(
-                    x=sat_stats.index,
-                    y=sat_stats.values,
-                    title="😊 Satisfação vs Attrition",
-                    color=sat_stats.values,
-                    color_continuous_scale='RdYlBu_r'
-                )
-                fig_sat.update_traces(texttemplate='%{y:.1%}', textposition='outside')
-                fig_sat.update_layout(showlegend=False, height=300)
-                st.plotly_chart(fig_sat, use_container_width=True)
+            # Satisfação vs attrition
+            satisfaction_stats = df.groupby('JobSatisfaction')['Attrition_Binary'].mean()
+            fig_sat = px.line(
+                x=satisfaction_stats.index,
+                y=satisfaction_stats.values,
+                title="😊 Satisfação vs Attrition",
+                markers=True
+            )
+            fig_sat.update_traces(line_color='#667eea', line_width=3)
+            fig_sat.update_layout(height=300)
+            st.plotly_chart(fig_sat, use_container_width=True)
         
         with col3:
-            if 'Age' in filtered_df.columns and len(filtered_df) > 0:
-                age_labels = ['Jovem (<30)', 'Médio (30-45)', 'Sênior (>45)']
-                age_bins = pd.cut(filtered_df['Age'], 
-                                bins=[0, 30, 45, 100], labels=age_labels)
-                age_stats = filtered_df.groupby(age_bins)['Attrition_Binary'].mean()
-                
-                fig_age = px.bar(
-                    x=age_stats.index,
-                    y=age_stats.values,
-                    title="👥 Idade vs Attrition",
-                    color=age_stats.values,
-                    color_continuous_scale='RdYlBu_r'
-                )
-                fig_age.update_traces(texttemplate='%{y:.1%}', textposition='outside')
-                fig_age.update_layout(showlegend=False, height=300)
-                st.plotly_chart(fig_age, use_container_width=True)
+            # Idade vs attrition
+            age_stats = df.groupby('Age_Group')['Attrition_Binary'].mean()
+            fig_age = px.bar(
+                x=age_stats.index,
+                y=age_stats.values,
+                title="👥 Idade vs Attrition",
+                color=age_stats.values,
+                color_continuous_scale='RdYlBu_r'
+            )
+            fig_age.update_traces(texttemplate='%{y:.1%}', textposition='outside')
+            fig_age.update_layout(showlegend=False, height=300)
+            st.plotly_chart(fig_age, use_container_width=True)
         
         # Insights principais
         st.subheader("💡 Insights Principais")
         
         insights = []
-        if 'OverTime' in filtered_df.columns and len(filtered_df) > 0:
-            overtime_impact = filtered_df.groupby('OverTime')['Attrition_Binary'].mean()
-            if 'Yes' in overtime_impact.index and 'No' in overtime_impact.index:
-                impact = overtime_impact['Yes'] - overtime_impact['No']
-                insights.append(f"🔥 Funcionários com overtime têm {impact:.1%} mais probabilidade de sair")
         
-        if 'JobSatisfaction' in filtered_df.columns and len(filtered_df) > 0:
-            low_sat = filtered_df[filtered_df['JobSatisfaction'] <= 2]['Attrition_Binary'].mean()
-            high_sat = filtered_df[filtered_df['JobSatisfaction'] >= 4]['Attrition_Binary'].mean()
-            insights.append(f"😔 Baixa satisfação aumenta attrition em {(low_sat - high_sat):.1%}")
+        # Insight sobre overtime
+        if 'Yes' in overtime_stats.index and 'No' in overtime_stats.index:
+            impact = overtime_stats['Yes'] - overtime_stats['No']
+            insights.append(f"🔥 Funcionários com overtime têm {impact:.1%} mais probabilidade de sair")
         
-        if 'Age' in filtered_df.columns and len(filtered_df) > 0:
-            young_attrition = filtered_df[filtered_df['Age'] < 30]['Attrition_Binary'].mean()
-            senior_attrition = filtered_df[filtered_df['Age'] > 45]['Attrition_Binary'].mean()
-            insights.append(f"👶 Funcionários jovens (<30) têm taxa de attrition {young_attrition:.1%} vs {senior_attrition:.1%} dos sêniores")
-        
-        for insight in insights:
-            st.markdown(f'<div class="insight-box">{insight}</div>', unsafe_allow_html=True)
-    
-    def create_prediction_tab(self, filtered_df):
-        """Cria tab de predições"""
-        st.header("🔮 Predições de Attrition")
-        
-        # Verificar se modelo está disponível
-        if self.model is None:
-            st.warning("⚠️ Modelo não disponível. Treinando modelo...")
-            self.train_models()
-            if self.model is None:
-                st.error("❌ Não foi possível treinar o modelo")
-                return
-        
-        # Métricas do modelo
-        st.subheader("📊 Performance do Modelo")
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("🎯 Acurácia", f"{self.model_metrics.get('accuracy', 0):.1%}")
-        with col2:
-            st.metric("🔍 Precisão", f"{self.model_metrics.get('precision', 0):.1%}")
-        with col3:
-            st.metric("📈 Recall", f"{self.model_metrics.get('recall', 0):.1%}")
-        with col4:
-            st.metric("📊 AUC-ROC", f"{self.model_metrics.get('auc_roc', 0):.3f}")
-        
-        st.markdown("---")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Feature importance
-            if self.feature_importance is not None and len(self.feature_importance) > 0:
-                st.subheader("🎯 Importância das Features")
-                fig_importance = px.bar(
-                    self.feature_importance.head(10),
-                    x='importance',
-                    y='feature',
-                    orientation='h',
-                    title="Top 10 Features Mais Importantes",
-                    color='importance',
-                    color_continuous_scale='viridis'
-                )
-                fig_importance.update_layout(height=400, yaxis={'categoryorder': 'total ascending'})
-                st.plotly_chart(fig_importance, use_container_width=True)
-            else:
-                st.info("Feature importance não disponível")
-        
-        with col2:
-            # ROC Curve
-            if hasattr(self, 'y_test') and hasattr(self, 'y_pred_proba'):
-                st.subheader("📈 Curva ROC")
-                fpr, tpr, _ = roc_curve(self.y_test, self.y_pred_proba)
-                
-                fig_roc = go.Figure()
-                fig_roc.add_trace(go.Scatter(
-                    x=fpr, y=tpr,
-                    mode='lines',
-                    name=f'ROC (AUC = {self.model_metrics.get("auc_roc", 0):.3f})',
-                    line=dict(color='#4ECDC4', width=3)
-                ))
-                fig_roc.add_trace(go.Scatter(
-                    x=[0, 1], y=[0, 1],
-                    mode='lines',
-                    name='Linha de Base',
-                    line=dict(color='red', dash='dash')
-                ))
-                fig_roc.update_layout(
-                    title="Curva ROC",
-                    xaxis_title="Taxa de Falsos Positivos",
-                    yaxis_title="Taxa de Verdadeiros Positivos",
-                    height=400
-                )
-                st.plotly_chart(fig_roc, use_container_width=True)
-        
-        st.markdown("---")
-        
-        # Lista de funcionários de alto risco
-        st.subheader("🚨 Funcionários de Alto Risco")
-        
-        if 'Risk_Score' in filtered_df.columns:
-            high_risk_df = filtered_df[filtered_df['Risk_Score'] > 0.7].copy()
-            
-            if len(high_risk_df) > 0:
-                # Selecionar colunas para exibir
-                display_columns = ['EmployeeNumber']
-                for col in ['Age', 'Department', 'JobRole', 'MonthlyIncome', 'YearsAtCompany', 'Risk_Score']:
-                    if col in high_risk_df.columns:
-                        display_columns.append(col)
-                
-                # Ordenar por risk score
-                high_risk_df = high_risk_df.sort_values('Risk_Score', ascending=False)
-                
-                # Formatação
-                if 'MonthlyIncome' in high_risk_df.columns:
-                    high_risk_df['MonthlyIncome'] = high_risk_df['MonthlyIncome'].apply(lambda x: f"${x:,.0f}")
-                if 'Risk_Score' in high_risk_df.columns:
-                    high_risk_df['Risk_Score'] = high_risk_df['Risk_Score'].apply(lambda x: f"{x:.1%}")
-                
-                st.dataframe(
-                    high_risk_df[display_columns].head(20),
-                    use_container_width=True,
-                    hide_index=True
-                )
-                
-                # Botão de download
-                csv = high_risk_df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download Lista Completa",
-                    data=csv,
-                    file_name="funcionarios_alto_risco.csv",
-                    mime="text/csv"
-                )
-            else:
-                st.info("🎉 Nenhum funcionário classificado como alto risco!")
-        
-        st.markdown("---")
-        
-        # Preditor individual
-        st.subheader("🎯 Preditor Individual")
-        
-        with st.expander("📝 Inserir dados do funcionário"):
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                age = st.number_input("Idade", min_value=18, max_value=65, value=30)
-                monthly_income = st.number_input("Salário Mensal ($)", min_value=1000, max_value=50000, value=5000)
-                years_company = st.number_input("Anos na Empresa", min_value=0, max_value=40, value=3)
-            
-            with col2:
-                job_satisfaction = st.selectbox("Satisfação no Trabalho", [1, 2, 3, 4], index=2)
-                work_life_balance = st.selectbox("Work-Life Balance", [1, 2, 3, 4], index=2)
-                distance_home = st.number_input("Distância de Casa (km)", min_value=1, max_value=50, value=10)
-            
-            with col3:
-                overtime = st.selectbox("Faz Overtime?", ["No", "Yes"])
-                business_travel = st.selectbox("Viagem de Negócios", ["Non-Travel", "Travel_Rarely", "Travel_Frequently"])
-                job_level = st.selectbox("Nível do Cargo", [1, 2, 3, 4, 5], index=2)
-            
-            if st.button("🔮 Calcular Risco de Attrition"):
-                # Calcular risk score baseado nos inputs
-                risk_score = 0
-                risk_score += 0.25 if overtime == "Yes" else 0
-                risk_score += 0.20 if job_satisfaction <= 2 else 0
-                risk_score += 0.15 if age < 30 else 0
-                risk_score += 0.20 if years_company < 2 else 0
-                risk_score += 0.10 if distance_home > 20 else 0
-                risk_score += 0.10 if work_life_balance <= 2 else 0
-                
-                # Fatores protetivos
-                risk_score -= 0.10 if job_level >= 4 else 0
-                risk_score -= 0.15 if monthly_income > 8000 else 0
-                risk_score -= 0.20 if years_company > 10 else 0
-                
-                risk_score = max(0, min(1, risk_score))
-                
-                # Exibir resultado
-                col1, col2, col3 = st.columns(3)
-                with col2:
-                    if risk_score > 0.7:
-                        st.markdown(f'<div class="risk-high"><h3>🚨 ALTO RISCO</h3><h2>{risk_score:.1%}</h2></div>', unsafe_allow_html=True)
-                        st.markdown("**Recomendações:**")
-                        st.markdown("- 1:1 imediato com gestor")
-                        st.markdown("- Revisar carga de trabalho")
-                        st.markdown("- Plano de retenção personalizado")
-                    elif risk_score > 0.3:
-                        st.markdown(f'<div class="risk-medium"><h3>⚠️ MÉDIO RISCO</h3><h2>{risk_score:.1%}</h2></div>', unsafe_allow_html=True)
-                        st.markdown("**Recomendações:**")
-                        st.markdown("- Monitoramento mensal")
-                        st.markdown("- Feedback regular")
-                        st.markdown("- Oportunidades de desenvolvimento")
-                    else:
-                        st.markdown(f'<div class="risk-low"><h3>✅ BAIXO RISCO</h3><h2>{risk_score:.1%}</h2></div>', unsafe_allow_html=True)
-                        st.markdown("**Recomendações:**")
-                        st.markdown("- Manter engajamento atual")
-                        st.markdown("- Reconhecimento e feedback")
-                        st.markdown("- Oportunidades de crescimento")
-    
-    def create_analytics_tab(self, filtered_df):
-        """Cria tab de analytics avançados"""
-        st.header("📈 Analytics Avançados")
-        
-        # Correlações
-        st.subheader("🔗 Matrix de Correlações")
-        
-        # Selecionar apenas colunas numéricas
-        numeric_cols = filtered_df.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) > 1:
-            corr_matrix = filtered_df[numeric_cols].corr()
-            
-            fig_corr = px.imshow(
-                corr_matrix,
-                title="Matrix de Correlações",
-                color_continuous_scale='RdBu_r',
-                aspect='auto'
-            )
-            fig_corr.update_layout(height=600)
-            st.plotly_chart(fig_corr, use_container_width=True)
-        else:
-            st.info("Dados insuficientes para análise de correlações")
-        
-        st.markdown("---")
-        
-        # Análises por segmento
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("📊 Attrition por Tempo de Empresa")
-            if 'YearsAtCompany' in filtered_df.columns and len(filtered_df) > 0:
-                tenure_bins = [0, 1, 2, 5, 10, 40]
-                tenure_labels = ['<1 ano', '1-2 anos', '2-5 anos', '5-10 anos', '>10 anos']
-                filtered_df['Tenure_Group'] = pd.cut(filtered_df['YearsAtCompany'], 
-                                                   bins=tenure_bins, labels=tenure_labels)
-                
-                tenure_stats = filtered_df.groupby('Tenure_Group')['Attrition_Binary'].agg(['count', 'mean']).reset_index()
-                tenure_stats.columns = ['Tenure_Group', 'Count', 'Attrition_Rate']
-                
-                fig_tenure = px.line(
-                    tenure_stats,
-                    x='Tenure_Group',
-                    y='Attrition_Rate',
-                    title="Taxa de Attrition por Tempo na Empresa",
-                    markers=True,
-                    line_shape='spline'
-                )
-                fig_tenure.update_traces(line_color='#FF6B6B', line_width=3)
-                fig_tenure.update_layout(height=350)
-                st.plotly_chart(fig_tenure, use_container_width=True)
-        
-        with col2:
-            st.subheader("💰 Distribuição Salarial")
-            if 'MonthlyIncome' in filtered_df.columns and len(filtered_df) > 0:
-                fig_salary = px.box(
-                    filtered_df,
-                    x='Attrition',
-                    y='MonthlyIncome',
-                    title="Distribuição Salarial por Attrition",
-                    color='Attrition',
-                    color_discrete_map={'No': '#4ECDC4', 'Yes': '#FF6B6B'}
-                )
-                fig_salary.update_layout(height=350)
-                st.plotly_chart(fig_salary, use_container_width=True)
-        
-        # Análise multidimensional
-        st.subheader("🎯 Análise Multidimensional")
-        
-        if all(col in filtered_df.columns for col in ['Age', 'MonthlyIncome', 'YearsAtCompany', 'Risk_Score']):
-            fig_3d = px.scatter_3d(
-                filtered_df,
-                x='Age',
-                y='MonthlyIncome',
-                z='YearsAtCompany',
-                color='Risk_Score',
-                size='Risk_Score',
-                title="Análise 3D: Idade vs Salário vs Tempo na Empresa",
-                color_continuous_scale='RdYlBu_r',
-                height=500
-            )
-            st.plotly_chart(fig_3d, use_container_width=True)
-        
-        # Análise de segmentação
-        st.subheader("🔍 Segmentação de Funcionários")
-        
-        if 'Risk_Category' in filtered_df.columns:
-            segment_analysis = filtered_df.groupby('Risk_Category').agg({
-                'Age': 'mean',
-                'MonthlyIncome': 'mean',
-                'YearsAtCompany': 'mean',
-                'JobSatisfaction': 'mean',
-                'Attrition_Binary': ['count', 'mean']
-            }).round(2)
-            
-            segment_analysis.columns = ['Idade Média', 'Salário Médio', 'Tempo Médio (anos)', 
-                                      'Satisfação Média', 'Total Funcionários', 'Taxa Attrition']
-            
-            st.dataframe(segment_analysis, use_container_width=True)
-    
-    def create_insights_tab(self, filtered_df):
-        """Cria tab de insights e recomendações"""
-        st.header("💡 Insights & Recomendações")
-        
-        # Insights baseados em dados
-        st.subheader("🔍 Principais Descobertas")
-        
-        insights = []
-        
-        # Análise de overtime
-        if 'OverTime' in filtered_df.columns and len(filtered_df) > 0:
-            overtime_analysis = filtered_df.groupby('OverTime')['Attrition_Binary'].agg(['count', 'mean'])
-            if 'Yes' in overtime_analysis.index and 'No' in overtime_analysis.index:
-                overtime_impact = overtime_analysis.loc['Yes', 'mean'] - overtime_analysis.loc['No', 'mean']
-                insights.append({
-                    'title': '⏰ Impacto do Overtime',
-                    'finding': f'Funcionários com overtime têm {overtime_impact:.1%} mais probabilidade de sair',
-                    'action': 'Implementar políticas de controle de horas extras e monitoramento de burnout'
-                })
-        
-        # Análise de satisfação
-        if 'JobSatisfaction' in filtered_df.columns and len(filtered_df) > 0:
-            low_satisfaction = filtered_df[filtered_df['JobSatisfaction'] <= 2]['Attrition_Binary'].mean()
-            high_satisfaction = filtered_df[filtered_df['JobSatisfaction'] >= 4]['Attrition_Binary'].mean()
-            satisfaction_impact = low_satisfaction - high_satisfaction
-            insights.append({
-                'title': '😊 Satisfação no Trabalho',
-                'finding': f'Funcionários com baixa satisfação têm {satisfaction_impact:.1%} mais chance de sair',
-                'action': 'Implementar pesquisas regulares de satisfação e programas de melhoria do ambiente de trabalho'
-            })
-        
-        # Análise de idade
-        if 'Age' in filtered_df.columns and len(filtered_df) > 0:
-            young_attrition = filtered_df[filtered_df['Age'] < 30]['Attrition_Binary'].mean()
-            senior_attrition = filtered_df[filtered_df['Age'] > 45]['Attrition_Binary'].mean()
-            insights.append({
-                'title': '👥 Fator Idade',
-                'finding': f'Funcionários jovens (<30) têm {young_attrition:.1%} de attrition vs {senior_attrition:.1%} dos sêniores',
-                'action': 'Desenvolver programas de mentoria e planos de carreira para jovens profissionais'
-            })
-        
-        # Exibir insights
-        for insight in insights:
-            with st.expander(f"📊 {insight['title']}"):
-                st.markdown(f"**Descoberta:** {insight['finding']}")
-                st.markdown(f"**Recomendação:** {insight['action']}")
-        
-        st.markdown("---")
-        
-        # Recomendações estratégicas
-        st.subheader("🎯 Recomendações Estratégicas")
-        
-        recommendations = [
-            {
-                'category': '🚨 Ação Imediata',
-                'items': [
-                    'Identificar e conversar com funcionários de alto risco (score > 70%)',
-                    'Revisar políticas de overtime e carga de trabalho',
-                    'Implementar programa de feedback regular com gestores'
-                ]
-            },
-            {
-                'category': '📈 Médio Prazo (3-6 meses)',
-                'items': [
-                    'Desenvolver programa de retenção de talentos jovens',
-                    'Implementar pesquisas trimestrais de satisfação',
-                    'Criar planos de desenvolvimento individual para funcionários-chave',
-                    'Revisar estrutura salarial e benefícios'
-                ]
-            },
-            {
-                'category': '🎓 Longo Prazo (6-12 meses)',
-                'items': [
-                    'Estabelecer programa de mentoria inter-geracional',
-                    'Criar trilhas de carreira claras por departamento',
-                    'Implementar política de work-life balance mais robusta',
-                    'Desenvolver sistema de reconhecimento e recompensas'
-                ]
-            }
-        ]
-        
-        for rec in recommendations:
-            with st.expander(f"{rec['category']}"):
-                for item in rec['items']:
-                    st.markdown(f"• {item}")
-        
-        st.markdown("---")
-        
-        # Calculadora de ROI
-        st.subheader("💰 Calculadora de ROI - Programa de Retenção")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**📊 Parâmetros do Negócio**")
-            num_employees = st.number_input("Número total de funcionários", 
-                                          min_value=1, value=len(filtered_df))
-            avg_salary = st.number_input("Salário médio anual ($)", 
-                                       min_value=10000, value=60000)
-            current_attrition = st.slider("Taxa atual de attrition (%)", 
-                                        0.0, 50.0, filtered_df['Attrition_Binary'].mean() * 100)
-            
-        with col2:
-            st.markdown("**🎯 Programa de Retenção**")
-            program_cost = st.number_input("Custo do programa anual ($)", 
-                                         min_value=1000, value=50000)
-            target_reduction = st.slider("Redução esperada de attrition (%)", 
-                                       0.0, 50.0, 25.0)
-            replacement_cost_pct = st.slider("Custo de substituição (% do salário)", 
-                                           50.0, 200.0, 100.0)
-        
-        # Cálculos
-        current_attrition_rate = current_attrition / 100
-        new_attrition_rate = current_attrition_rate * (1 - target_reduction / 100)
-        
-        current_losses = num_employees * current_attrition_rate
-        new_losses = num_employees * new_attrition_rate
-        employees_retained = current_losses - new_losses
-        
-        replacement_cost = avg_salary * (replacement_cost_pct / 100)
-        savings = employees_retained * replacement_cost
-        roi = ((savings - program_cost) / program_cost) * 100
-        
-        # Resultados
-        st.markdown("---")
-        st.subheader("📊 Resultados da Análise de ROI")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("💰 Economia Anual", f"${savings:,.0f}")
-        
-        with col2:
-            st.metric("👥 Funcionários Retidos", f"{employees_retained:.0f}")
-        
-        with col3:
-            color = "normal" if roi > 0 else "inverse"
-            st.metric("📈 ROI", f"{roi:.0f}%", delta_color=color)
-        
-        # Análise de sensibilidade
-        if roi > 0:
-            st.success(f"🎉 O programa é viável! Para cada $1 investido, você economiza ${(savings/program_cost):.2f}")
-        else:
-            st.warning("⚠️ O programa pode não ser viável com os parâmetros atuais. Considere ajustar os custos ou metas.")
-        
-        # Gráfico de sensibilidade
-        st.subheader("📈 Análise de Sensibilidade")
-        
-        reduction_scenarios = np.arange(5, 51, 5)
-        roi_scenarios = []
-        
-        for reduction in reduction_scenarios:
-            scenario_new_rate = current_attrition_rate * (1 - reduction / 100)
-            scenario_retained = num_employees * (current_attrition_rate - scenario_new_rate)
-            scenario_savings = scenario_retained * replacement_cost
-            scenario_roi = ((scenario_savings - program_cost) / program_cost) * 100
-            roi_scenarios.append(scenario_roi)
-        
-        fig_sensitivity = px.line(
-            x=reduction_scenarios,
-            y=roi_scenarios,
-            title="ROI vs Redução de Attrition",
-            labels={'x': 'Redução de Attrition (%)', 'y': 'ROI (%)'}
-        )
-        fig_sensitivity.add_hline(y=0, line_dash="dash", line_color="red", 
-                                annotation_text="Break-even")
-        fig_sensitivity.update_traces(line_color='#4ECDC4', line_width=3)
-        st.plotly_chart(fig_sensitivity, use_container_width=True)
-    
-    def run(self):
-        """Executa o dashboard"""
-        # Cabeçalho principal
-        st.markdown('<div class="main-header">🔥 AttritionGuard - Employee Analytics</div>', 
-                   unsafe_allow_html=True)
-        
-        # Subtitle
-        st.markdown("""
-        <div style='text-align: center; margin-bottom: 2rem; color: #666; font-size: 1.2rem;'>
-        Análise Preditiva e Insights Acionáveis para Retenção de Talentos
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # Setup sidebar e obter dados filtrados
-        filtered_df = self.setup_sidebar()
-        
-        # Verificar se há dados
-        if filtered_df is None or len(filtered_df) == 0:
-            st.error("⚠️ Nenhum dado disponível com os filtros aplicados.")
-            return
-        
-        # Criar tabs principais
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "📊 Visão Geral", 
-            "🔮 Predições", 
-            "📈 Analytics", 
-            "💡 Insights"
-        ])
-        
-        with tab1:
-            self.create_overview_tab(filtered_df)
-        
-        with tab2:
-            self.create_prediction_tab(filtered_df)
-        
-        with tab3:
-            self.create_analytics_tab(filtered_df)
-        
-        with tab4:
-            self.create_insights_tab(filtered_df)
-        
-        # Footer
-        st.markdown("---")
-        st.markdown("""
-        <div class="footer">
-            <p>🔥 <strong>AttritionGuard</strong> - Employee Analytics Dashboard</p>
-            <p>Desenvolvido com ❤️ usando Streamlit | 
-            📊 Dados: IBM HR Analytics Dataset | 
-            🤖 ML: Random Forest Classifier</p>
-            <p><em>Para sugestões e melhorias, entre em contato!</em></p>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ========================================
-# EXECUÇÃO PRINCIPAL
-# ========================================
-
-if __name__ == "__main__":
-    # Inicializar e executar dashboard
-    try:
-        dashboard = AttritionDashboard()
-        dashboard.run()
-    except Exception as e:
-        st.error(f"❌ Erro crítico na aplicação: {str(e)}")
-        st.info("🔄 Recarregue a página ou verifique os dados de entrada.")
-
-
+        # Insight sobre idade
+        young_attrition = df[df['Age'] < 30]['Attrition_Binary'].mean()
+        senior_attrition = df[df['Age'] > 45]['Attrition_Binary'].mean()
+        insights.append(f"👶 Funcionários jovens (<30) têm {young_attrition:.
