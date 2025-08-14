@@ -238,8 +238,6 @@ class AttritionDashboard:
             st.session_state.model = None
             st.session_state.model_metrics = {}
             st.session_state.feature_importance = None
-            
-        self.load_data()
     
     def generate_synthetic_data(self, n_samples=1470):
         """Gera dados sintéticos realísticos para demonstração"""
@@ -366,26 +364,48 @@ class AttritionDashboard:
         return df
     
     @st.cache_data
-    def load_data(_self):
-        """Carrega ou gera dados"""
+    def generate_and_prepare_data(_self, uploaded_data=None):
+        """Gera ou processa dados sem widgets"""
         try:
-            # Tentar carregar arquivo CSV
-            uploaded_file = st.file_uploader("📁 Carregar arquivo CSV (Opcional)", type=['csv'])
-            
-            if uploaded_file is not None:
-                df = pd.read_csv(uploaded_file)
-                st.success("✅ Dados carregados com sucesso!")
+            if uploaded_data is not None:
+                # Usar dados carregados
+                df = pd.read_csv(io.StringIO(uploaded_data.decode('utf-8')))
             else:
                 # Gerar dados sintéticos
                 df = _self.generate_synthetic_data()
-                st.info("ℹ️ Usando dados sintéticos para demonstração")
             
             # Preparar dados
             df = _self.prepare_data(df)
             
+            return df
+            
+        except Exception as e:
+            st.error(f"❌ Erro ao processar dados: {str(e)}")
+            return None
+    
+    def load_data(self):
+        """Carrega dados com file uploader (sem cache)"""
+        try:
+            # Widget file uploader (fora da função cached)
+            uploaded_file = st.file_uploader("📁 Carregar arquivo CSV (Opcional)", type=['csv'])
+            
+            # Processar dados usando função cached
+            if uploaded_file is not None:
+                # Ler dados do arquivo
+                uploaded_data = uploaded_file.read()
+                df = self.generate_and_prepare_data(uploaded_data)
+                if df is not None:
+                    st.success("✅ Dados carregados com sucesso!")
+            else:
+                # Usar dados sintéticos
+                df = self.generate_and_prepare_data()
+                if df is not None:
+                    st.info("ℹ️ Usando dados sintéticos para demonstração")
+            
             # Salvar no session state
-            st.session_state.df = df
-            st.session_state.data_loaded = True
+            if df is not None:
+                st.session_state.df = df
+                st.session_state.data_loaded = True
             
             return df
             
@@ -1214,6 +1234,16 @@ class AttritionDashboard:
             Análise Preditiva de Rotatividade de Funcionários
         </div>
         """, unsafe_allow_html=True)
+        
+        # Carregar dados (com file uploader)
+        if not st.session_state.data_loaded or st.session_state.df is None:
+            st.markdown("### 📁 Carregamento de Dados")
+            self.load_data()
+        
+        # Verificar se dados foram carregados
+        if not st.session_state.data_loaded or st.session_state.df is None:
+            st.warning("⚠️ Aguardando carregamento dos dados...")
+            return
         
         # Setup sidebar e filtros
         filtered_df = self.setup_sidebar()
