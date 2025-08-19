@@ -1276,7 +1276,7 @@ class AttritionDashboard:
         st.markdown("""
         <div class="footer">
             <p>🔥 <strong>AttritionGuard</strong> - Employee Analytics Dashboard</p>
-            <p>Desenvolvido com ❤️ usando Streamlit, Plotly e Scikit-Learn</p>
+            <p>Streamlit, Plotly e Scikit-Learn</p>
             <p>© 2024 - Análise Preditiva de Rotatividade de Funcionários</p>
         </div>
         """, unsafe_allow_html=True)
@@ -1289,3 +1289,4 @@ if __name__ == "__main__":
     # Inicializar e executar dashboard
     dashboard = AttritionDashboard()
     dashboard.run()
+
