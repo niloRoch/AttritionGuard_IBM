@@ -320,25 +320,17 @@ Use as [GitHub Issues](https://github.com/seu-usuario/employee-attrition-analyti
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/nilo-rocha-/)
 [![Email](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:nilo.roch4@gmail.com)
 
----
-
 ## 📈 **Analytics do Projeto**
 
 ![GitHub stars](https://img.shields.io/github/stars/seu-usuario/employee-attrition-analytics?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/seu-usuario/employee-attrition-analytics?style=social)
 ![GitHub watchers](https://img.shields.io/github/watchers/seu-usuario/employee-attrition-analytics?style=social)
 
----
-
-#
-<img src="https://user-images.githubusercontent.com/73097560/115834477-dbab4500-a447-11eb-908a-139a6edaec5c.gif" width="100%">
-
-
 ![Footer](https://capsule-render.vercel.app/api?type=waving&color=FF6B6B&height=100&section=footer&text=Thanks%20for%20exploring%20the%20insights&fontSize=16&fontColor=ffffff&animation=twinkling)
 
 </div>
 
----
+
 
 ## 📄 **Changelog**
 
